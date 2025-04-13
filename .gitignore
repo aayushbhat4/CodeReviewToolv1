@@ -1,0 +1,24 @@
+# Virtual environments
+.venv/
+env/
+venv/
+.conda/
+
+# Compiled files
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Large local files
+global_codebase/
+*.pkl
+*.faiss
+*.npy
+*.db
+*.log
