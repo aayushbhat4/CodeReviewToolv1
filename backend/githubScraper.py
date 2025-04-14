@@ -5,12 +5,11 @@ import os         # for directory creation and file path handling
 import zipfile    # for unzipping downloaded repo archives
 from io import BytesIO  # to handle byte-streams from downloaded zip files
 from tqdm import tqdm 
+
  # used to show progress bars while downloading
 
 GITHUB_API = "https://api.github.com/search/repositories"
 HEADERS = {"Accept": "application/vnd.github+json"}
-
-# Optional: Add your token for higher rate limits
 HEADERS["Authorization"] = "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"
 
 def search_repos(query, max_repos=10):
@@ -59,6 +58,7 @@ def download_repo_zip(repo_api_url, repo_html_url, dest_folder):
     """
     r_meta = requests.get(repo_api_url, headers=HEADERS)
     if r_meta.status_code != 200:
+
         print(f"Failed to fetch metadata for {repo_html_url}")
         return None
 
@@ -66,7 +66,7 @@ def download_repo_zip(repo_api_url, repo_html_url, dest_folder):
     zip_url = repo_html_url + f"/archive/refs/heads/{default_branch}.zip"
     r = requests.get(zip_url)
     if r.status_code != 200:
-        
+        print(r, r.status_code)
         print(f"Failed to download {repo_html_url} with branch {default_branch}, the error was {r.status_code}\n")
         return None
 

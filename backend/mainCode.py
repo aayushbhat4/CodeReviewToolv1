@@ -3,7 +3,7 @@ import torch
 import numpy as np
 import faiss
 import os
-import openai
+from openai import OpenAI
 from tqdm import tqdm
 
 
@@ -14,7 +14,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
 
-
+#Embed the code snippets using CodeBERT
 def embed_code(code_snippet):
     tokens = tokenizer(code_snippet, return_tensors='pt', truncation=True, padding=True).to(device)
     with torch.no_grad():
@@ -31,7 +31,7 @@ def embed_codes_batch(snippets, batch_size=16):
         batch_embeddings = output.last_hidden_state.mean(dim=1).cpu().numpy()
         embeddings.extend(batch_embeddings)
     return embeddings
-
+#
 def extract_code_snippets(folder_path):
     snippets = []
     for root, _, files in os.walk(folder_path):
@@ -49,6 +49,8 @@ def extract_code_snippets(folder_path):
                     })
     return snippets
 
+
+#Build the FAISS index
 def build_faiss_index(snippets):
     print("Building FAISS index...")
     embeddings = embed_codes_batch(snippets)
@@ -57,49 +59,78 @@ def build_faiss_index(snippets):
     print("Index built successfully.")
     return index, embeddings
 
-def search_similar(index, embeddings, snippets, new_code, current_file=None, k_local=3, k_global=2):
-    new_emb = torch.tensor(embed_code(new_code)).cpu().reshape(1, -1)  # ensure CPU for FAISS
-    D, I = index.search(new_emb.numpy(), k_local + k_global)
 
+#Searching the FAISS index for similar code snippets
+def search_similar_dual(
+    local_index, local_embeddings, local_snippets,
+    global_index, global_embeddings, global_snippets,
+    new_code, current_file=None, k_local=3, k_global=2
+):
+    """
+    Searches both local and global codebases separately using FAISS,
+    and returns a dual context (local + global matches).
+    """
+
+    # 1. Embed the new code
+    new_emb = torch.tensor(embed_code(new_code)).cpu().reshape(1, -1).numpy().astype("float32")
+
+    # 2. Search local
+    D_local, I_local = local_index.search(new_emb, k_local + 5)  # extra buffer in case of file mismatch
     local_matches = []
-    global_matches = []
-
-    for i, idx in enumerate(tqdm(I[0], desc="Searching similar code")):
-        match = snippets[idx]
+    for i in tqdm(I_local[0], desc="Searching local context"):
+        if i >= len(local_snippets): continue
+        match = local_snippets[i]
         if current_file and match['file'] == current_file:
             local_matches.append(match)
-        else:
-            global_matches.append(match)
+        elif not current_file:
+            local_matches.append(match)
+        if len(local_matches) >= k_local:
+            break
 
-    return local_matches[:k_local], global_matches[:k_global]
-def format_prompt(new_code, local_matches, global_matches):
+    # 3. Search global
+    D_global, I_global = global_index.search(new_emb, k_global + 5)
+    global_matches = []
+    for i in tqdm(I_global[0], desc="Searching global context"):
+        if i >= len(global_snippets): continue
+        match = global_snippets[i]
+        global_matches.append(match)
+        if len(global_matches) >= k_global:
+            break
+
+    return local_matches, global_matches
+
+
+def format_dual_context_prompt(new_code, local_matches, global_matches):
+    """
+    Create a prompt with dual context for LLM review.
+    """
     prompt = f"""
-You are reviewing new code added to a project.
+You are reviewing a newly written code snippet in a software project. Use the existing patterns from the same file (local context) and from the rest of the project or similar repositories (global context) to assess it.
 
-New code:
+### New Code
 {new_code}
 
-Similar code from the SAME file:
+### Local Context (Same File)
 """
     for m in local_matches:
         prompt += f"\nFile: {m['file']}\n{m['code']}\n"
 
-    prompt += "\nOther relevant patterns from the project:\n"
+    prompt += "\n### Global Context (Other Files or Repos)\n"
     for m in global_matches:
         prompt += f"\nFile: {m['file']}\n{m['code']}\n"
 
-    prompt += "\nPlease provide a code review with more emphasis on the patterns from the same file."
+    prompt += "\n### Review the new code based on the context above. Highlight structure, bugs, and improvements. Keep comments minimal but insightful (max 5)."
     return prompt
 
-from openai import OpenAI
 
-client = OpenAI(api_key =("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"))
+
+client = OpenAI(api_key =("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"))
 
 def get_llm_review(prompt):
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "developer", "content": "You are a helpful software engineer providing feedback on code."},
+            {"role": "system", "content": "You are a helpful software engineer providing feedback on code."},
             {"role": "user", "content": prompt}
         ],
         temperature=0.5,
