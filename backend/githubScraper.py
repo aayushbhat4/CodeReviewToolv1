@@ -5,12 +5,14 @@ import os         # for directory creation and file path handling
 import zipfile    # for unzipping downloaded repo archives
 from io import BytesIO  # to handle byte-streams from downloaded zip files
 from tqdm import tqdm 
-
+from dotenv import load_dotenv
+load_dotenv()
+github_api_key = os.getenv("GITHUB_KEY")
  # used to show progress bars while downloading
 
 GITHUB_API = "https://api.github.com/search/repositories"
 HEADERS = {"Accept": "application/vnd.github+json"}
-HEADERS["Authorization"] = "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"
+HEADERS["Authorization"] = github_api_key
 
 def search_repos(query, max_repos=10):
     """
