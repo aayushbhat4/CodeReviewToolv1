@@ -3,7 +3,7 @@
 env/
 venv/
 .conda/
-
+.env
 # Compiled files
 __pycache__/
 *.py[cod]
@@ -22,3 +22,6 @@ global_codebase/
 *.npy
 *.db
 *.log
+
+gpu_test.py
+.vscode

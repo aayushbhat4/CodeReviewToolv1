@@ -7,8 +7,8 @@ import traceback
 # Fix OpenMP duplicate library issue
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-from githubScraper import download_repo_zip
-from mainCode import (
+from backend.githubScraper import download_repo_zip
+from backend.mainCode import (
     extract_code_snippets,
     build_faiss_index,
     search_similar_dual,

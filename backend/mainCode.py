@@ -5,7 +5,11 @@ import faiss
 import os
 from openai import OpenAI
 from tqdm import tqdm
+from dotenv import load_dotenv
 
+load_dotenv()
+open_ai_key = os.getenv("OPENAI_API_KEY")
+print("OpenAI Key: ", open_ai_key)
 
 model_name = "microsoft/codebert-base"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -124,7 +128,7 @@ You are reviewing a newly written code snippet in a software project. Use the ex
 
 
 
-client = OpenAI(api_key =("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"))
+client = OpenAI(api_key = open_ai_key)
 
 def get_llm_review(prompt):
     response = client.chat.completions.create(
