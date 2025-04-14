@@ -4,7 +4,6 @@ import pickle
 import shutil
 import traceback
 
-# Fix OpenMP duplicate library issue
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 from backend.githubScraper import download_repo_zip
@@ -26,8 +25,7 @@ def review():
 
     try:
         print("[INFO] Received review request.")
-        
-        
+
         # Step 1: Download and extract repo
         if os.path.exists(temp_dir):
             print("[INFO] Cleaning existing temp_repo directory.")
