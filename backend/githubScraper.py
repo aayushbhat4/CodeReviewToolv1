@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 github_api_key = os.getenv("GITHUB_KEY")
  # used to show progress bars while downloading
+print("GitHub API Key: ", github_api_key)
 
 GITHUB_API = "https://api.github.com/search/repositories"
 HEADERS = {"Accept": "application/vnd.github+json"}
@@ -97,5 +98,5 @@ def fetch_top_python_repos(dest="global_codebase", query="language:Python stars:
             print(f"Already exists: {name}")
 
 if __name__ == "__main__":
-    fetch_top_python_repos(count=5)  # Change to more if needed
+    fetch_top_python_repos(count=0)  # Change to more if needed
 

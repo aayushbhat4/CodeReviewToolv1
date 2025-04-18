@@ -3,11 +3,11 @@ import os
 import pickle
 import shutil
 import traceback
-
+from flask_cors import CORS
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-from backend.githubScraper import download_repo_zip
-from backend.mainCode import (
+from githubScraper import download_repo_zip
+from mainCode import (
     extract_code_snippets,
     build_faiss_index,
     search_similar_dual,
@@ -16,16 +16,21 @@ from backend.mainCode import (
 )
 
 app = Flask(__name__)
+CORS(app)
+
 
 @app.route("/review", methods=["POST"])
 def review():
-    repo_url = request.json.get("repo_url")
-    new_code = request.json.get("new_code")
     temp_dir = "temp_repo"
-
+    
     try:
-        print("[INFO] Received review request.")
+        data =request.get_json()
+        repo_url = data.get("repo_url")
+        new_code = data.get("new_code")
+        
 
+        print("[INFO] Received review request.")
+        print("[DEBUG] Incoming JSON:", request.get_json())
         # Step 1: Download and extract repo
         if os.path.exists(temp_dir):
             print("[INFO] Cleaning existing temp_repo directory.")
@@ -62,13 +67,16 @@ def review():
         print("[INFO] Formatting prompt and generating feedback...")
         prompt = format_dual_context_prompt(new_code, local_matches, global_matches)
         feedback = get_llm_review(prompt)
-
+        feedback = feedback.encode("utf-8", errors="replace").decode()
         print("[INFO] Review complete.")
         print(feedback)
 
         # Cleanup
         shutil.rmtree(temp_dir)
-        return jsonify({"feedback": feedback})
+        print("[DEBUG] Returning JSON:", {"feedback": feedback})
+
+        return jsonify({"feedback": feedback}),200
+    
 
     except Exception as e:
         print("[ERROR] Exception occurred:")
@@ -82,4 +90,4 @@ def review():
 
 if __name__ == "__main__":
     print("[INFO] Starting Flask server...")
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=True, port=5000, use_reloader=False)

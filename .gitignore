@@ -24,4 +24,5 @@ global_codebase/
 *.log
 
 backend/gpu_test.py
+backend/TestPlace.py
 .vscode
