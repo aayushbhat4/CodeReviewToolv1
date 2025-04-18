@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 load_dotenv()
 open_ai_key = os.getenv("OPEN_API_KEY")
 
-print("OpenAI Key: ", open_ai_key)
 
 model_name = "microsoft/codebert-base"
 tokenizer = AutoTokenizer.from_pretrained(model_name)

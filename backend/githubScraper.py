@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 github_api_key = os.getenv("GITHUB_KEY")
  # used to show progress bars while downloading
-print("GitHub API Key: ", github_api_key)
+
 
 GITHUB_API = "https://api.github.com/search/repositories"
 HEADERS = {"Accept": "application/vnd.github+json"}
